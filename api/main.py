@@ -42,6 +42,10 @@ def lire_la_bible():
             book_list = section.find_next('ul', class_='list-group')
             if book_list:
                 books = [li.get_text(strip=True) for li in book_list.find_all('li')]
+            else:
+                print(f"Aucune liste de livres trouvée pour {section_title}")
+        else:
+            print(f"Section non trouvée : {section_title}")
         return books
 
     # Scraper chaque partie de l'Ancien Testament
@@ -55,7 +59,9 @@ def lire_la_bible():
     bible_data["Nouveau Testament"]["Actes des Apôtres"] = extract_books("Actes des Apôtres")
     bible_data["Nouveau Testament"]["Epîtres de Paul"] = extract_books("Epîtres de Paul")
     bible_data["Nouveau Testament"]["Autres Epîtres"] = extract_books("Autres Epîtres")
-    bible_data["Nouveau Testament"]["Livre de la Révélation"] = extract_books("Livre de la Révélation")
+    
+    # Ajout explicite pour le livre Apocalypse
+    bible_data["Nouveau Testament"]["Livre de la Révélation"] = extract_books("Livre de la Révélation") + ["Apocalypse"]
 
     # Retourner les résultats sous forme de JSON
     return jsonify(bible_data)
