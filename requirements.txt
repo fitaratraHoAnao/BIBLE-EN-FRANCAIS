@@ -1,6 +1,3 @@
-Flask
+flask 
+beautifulsoup4 
 requests
-google-cloud-vision
-google-auth
-protobuf
-python-dotenv
