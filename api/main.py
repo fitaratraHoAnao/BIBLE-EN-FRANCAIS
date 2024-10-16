@@ -2,9 +2,16 @@ import os
 from flask import Flask, request, jsonify
 from google.cloud import vision
 from google.protobuf.json_format import MessageToDict
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
+
+# Récupérer la clé API de Google Cloud Vision
+api_key = os.getenv('API_CLOUD_VISION')
 
 # Configurer la variable d'environnement pour l'API Cloud Vision
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.getenv('API_CLOUD_VISION')
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = api_key
 
 app = Flask(__name__)
 
