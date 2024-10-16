@@ -1,117 +1,63 @@
-import os
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 import requests
-import base64
-from dotenv import load_dotenv
-
-# Charger les variables d'environnement depuis le fichier .env (si nécessaire)
-load_dotenv()
-
-# Utiliser la clé API fournie directement dans les requêtes
-API_KEY = os.getenv('API_CLOUD_VISION')
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-def call_vision_api(features, image_content):
-    """Appelle l'API Google Cloud Vision pour effectuer des analyses d'images."""
-    endpoint = f'https://vision.googleapis.com/v1/images:annotate?key={API_KEY}'
-    headers = {'Content-Type': 'application/json'}
-    
-    # Requête JSON envoyée à l'API Vision
-    body = {
-        'requests': [{
-            'image': {'content': image_content},
-            'features': features
-        }]
+@app.route('/lire-la-bible', methods=['GET'])
+def lire_la_bible():
+    url = "https://emcitv.com/bible/lire-la-bible.html"
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Scraping des livres
+    bible_data = {
+        "Ancien Testament": {
+            "Le Pentateuque": [],
+            "Livres historiques": [],
+            "Livres poétiques": [],
+            "Les Prophètes": []
+        },
+        "Nouveau Testament": {
+            "Les Evangiles": [],
+            "Actes des Apôtres": [],
+            "Epîtres de Paul": [],
+            "Autres Epîtres": [],
+            "Livre de la Révélation": []
+        }
     }
-    
-    response = requests.post(endpoint, json=body, headers=headers)
-    return response.json()
 
-def encode_image(image):
-    """Encode une image en base64."""
-    return base64.b64encode(image).decode('utf-8')
+    # Ancien Testament
+    ancien_testament_sections = soup.select('div.col-md-6 h2:contains("Ancien testament") + div.panel')
+    for section in ancien_testament_sections:
+        section_title = section.select_one('.panel-title').text.strip()
+        books = [li.text.strip() for li in section.select('.list-group-item')]
+        if "Pentateuque" in section_title:
+            bible_data["Ancien Testament"]["Le Pentateuque"].extend(books)
+        elif "historiques" in section_title:
+            bible_data["Ancien Testament"]["Livres historiques"].extend(books)
+        elif "poétiques" in section_title:
+            bible_data["Ancien Testament"]["Livres poétiques"].extend(books)
+        elif "Prophètes" in section_title:
+            bible_data["Ancien Testament"]["Les Prophètes"].extend(books)
 
-@app.route('/object-detection', methods=['POST'])
-def object_detection():
-    """Route pour la reconnaissance d'objets."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'OBJECT_LOCALIZATION'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
+    # Nouveau Testament
+    nouveau_testament_sections = soup.select('div.col-md-6 h2:contains("Nouveau testament") + div.panel')
+    for section in nouveau_testament_sections:
+        section_title = section.select_one('.panel-title').text.strip()
+        books = [li.text.strip() for li in section.select('.list-group-item')]
+        if "Evangiles" in section_title:
+            bible_data["Nouveau Testament"]["Les Evangiles"].extend(books)
+        elif "Actes des Apôtres" in section_title:
+            bible_data["Nouveau Testament"]["Actes des Apôtres"].extend(books)
+        elif "Epîtres de Paul" in section_title:
+            bible_data["Nouveau Testament"]["Epîtres de Paul"].extend(books)
+        elif "Autres Epîtres" in section_title:
+            bible_data["Nouveau Testament"]["Autres Epîtres"].extend(books)
+        elif "Révélation" in section_title:
+            bible_data["Nouveau Testament"]["Livre de la Révélation"].extend(books)
 
-@app.route('/text-detection', methods=['POST'])
-def text_detection():
-    """Route pour la détection de texte (OCR)."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'TEXT_DETECTION'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
-
-@app.route('/face-detection', methods=['POST'])
-def face_detection():
-    """Route pour la reconnaissance de visages."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'FACE_DETECTION'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
-
-@app.route('/label-detection', methods=['POST'])
-def label_detection():
-    """Route pour l'étiquetage d'images."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'LABEL_DETECTION'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
-
-@app.route('/image-classification', methods=['POST'])
-def image_classification():
-    """Route pour la classification d'images."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'LABEL_DETECTION'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
-
-@app.route('/safe-search-detection', methods=['POST'])
-def safe_search_detection():
-    """Route pour la détection de contenu explicite."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'SAFE_SEARCH_DETECTION'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
-
-@app.route('/landmark-detection', methods=['POST'])
-def landmark_detection():
-    """Route pour la détection de points d'intérêt (Landmark)."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'LANDMARK_DETECTION'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
-
-@app.route('/image-properties', methods=['POST'])
-def image_properties():
-    """Route pour l'analyse des couleurs et des propriétés d'images."""
-    image_file = request.files['image']
-    image_content = encode_image(image_file.read())
-    features = [{'type': 'IMAGE_PROPERTIES'}]
-    
-    result = call_vision_api(features, image_content)
-    return jsonify(result)
+    return jsonify(bible_data)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-    
