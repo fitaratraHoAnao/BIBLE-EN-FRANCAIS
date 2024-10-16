@@ -1,9 +1,10 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import requests
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
+# Route pour lire la structure de la Bible (Ancien et Nouveau Testament)
 @app.route('/lire-la-bible', methods=['GET'])
 def lire_la_bible():
     # URL de la page à scraper
@@ -58,6 +59,48 @@ def lire_la_bible():
 
     # Retourner les résultats sous forme de JSON
     return jsonify(bible_data)
+
+# Route pour rechercher un livre et un chapitre spécifique
+@app.route('/recherche', methods=['GET'])
+def recherche_bible():
+    # Récupérer les paramètres de l'URL
+    livre = request.args.get('bible', 'genese').lower()
+    chapitre = request.args.get('chapitre', '1')
+
+    # Construire l'URL de la page à scraper
+    base_url = f"https://emcitv.com/bible/{livre}.html"
+    if chapitre != '1':
+        base_url = f"https://emcitv.com/bible/{livre}-{chapitre}.html"
+
+    # Effectuer la requête HTTP pour obtenir le contenu de la page
+    response = requests.get(base_url)
+    
+    if response.status_code != 200:
+        return jsonify({"error": "Page non trouvée"}), 404
+
+    # Parser le contenu HTML avec BeautifulSoup
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Extraire le nom du livre et du chapitre
+    titre_livre = soup.find('h1', class_='book').text.strip()
+    titre_chapitre = soup.find('span', class_='label-chapters').text.strip()
+
+    # Extraire les versets du chapitre
+    versets = []
+    for verse in soup.find_all('span', class_='verse'):
+        num = verse.find('a', class_='num').text.strip()
+        contenu = verse.find('span', class_='content').text.strip()
+        versets.append(f"{num} {contenu}")
+
+    # Créer le dictionnaire de résultat
+    result = {
+        "livre": titre_livre,
+        "chapitre": titre_chapitre,
+        "versets": versets
+    }
+
+    # Retourner les résultats sous forme de JSON
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
