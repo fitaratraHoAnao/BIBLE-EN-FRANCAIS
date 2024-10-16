@@ -34,7 +34,7 @@ def lire_la_bible():
 
     # Fonction pour scraper une section spécifique de livres bibliques
     def extract_books(section_title):
-        section = soup.find('h3', text=section_title)
+        section = soup.find('h3', string=section_title)
         books = []
         if section:
             # Trouver tous les livres dans la section
