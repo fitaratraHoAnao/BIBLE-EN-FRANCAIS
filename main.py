@@ -1,16 +1,13 @@
 from flask import Flask, jsonify
-import requests
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
 @app.route('/lire-la-bible', methods=['GET'])
 def lire_la_bible():
-    url = "https://emcitv.com/bible/lire-la-bible.html"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
+    with open('/mnt/data/web.html', 'r', encoding='utf-8') as file:
+        soup = BeautifulSoup(file, 'html.parser')
 
-    # Scraping des livres
     bible_data = {
         "Ancien Testament": {
             "Le Pentateuque": [],
@@ -27,38 +24,28 @@ def lire_la_bible():
         }
     }
 
+    def extract_books(section_heading):
+        section = soup.find('h3', text=section_heading)
+        books = []
+        if section:
+            book_list = section.find_next('ul', class_='list-group')
+            books = [li.get_text(strip=True) for li in book_list.find_all('li')]
+        return books
+
     # Ancien Testament
-    ancien_testament_sections = soup.select('div.col-md-6 h2:contains("Ancien testament") + div.panel')
-    for section in ancien_testament_sections:
-        section_title = section.select_one('.panel-title').text.strip()
-        books = [li.text.strip() for li in section.select('.list-group-item')]
-        if "Pentateuque" in section_title:
-            bible_data["Ancien Testament"]["Le Pentateuque"].extend(books)
-        elif "historiques" in section_title:
-            bible_data["Ancien Testament"]["Livres historiques"].extend(books)
-        elif "poétiques" in section_title:
-            bible_data["Ancien Testament"]["Livres poétiques"].extend(books)
-        elif "Prophètes" in section_title:
-            bible_data["Ancien Testament"]["Les Prophètes"].extend(books)
+    bible_data["Ancien Testament"]["Le Pentateuque"] = extract_books("Le Pentateuque")
+    bible_data["Ancien Testament"]["Livres historiques"] = extract_books("Livres historiques")
+    bible_data["Ancien Testament"]["Livres poétiques"] = extract_books("Livres poétiques")
+    bible_data["Ancien Testament"]["Les Prophètes"] = extract_books("Les Prophètes")
 
     # Nouveau Testament
-    nouveau_testament_sections = soup.select('div.col-md-6 h2:contains("Nouveau testament") + div.panel')
-    for section in nouveau_testament_sections:
-        section_title = section.select_one('.panel-title').text.strip()
-        books = [li.text.strip() for li in section.select('.list-group-item')]
-        if "Evangiles" in section_title:
-            bible_data["Nouveau Testament"]["Les Evangiles"].extend(books)
-        elif "Actes des Apôtres" in section_title:
-            bible_data["Nouveau Testament"]["Actes des Apôtres"].extend(books)
-        elif "Epîtres de Paul" in section_title:
-            bible_data["Nouveau Testament"]["Epîtres de Paul"].extend(books)
-        elif "Autres Epîtres" in section_title:
-            bible_data["Nouveau Testament"]["Autres Epîtres"].extend(books)
-        elif "Révélation" in section_title:
-            bible_data["Nouveau Testament"]["Livre de la Révélation"].extend(books)
+    bible_data["Nouveau Testament"]["Les Evangiles"] = extract_books("Les Evangiles")
+    bible_data["Nouveau Testament"]["Actes des Apôtres"] = extract_books("Actes des Apôtres")
+    bible_data["Nouveau Testament"]["Epîtres de Paul"] = extract_books("Epîtres de Paul")
+    bible_data["Nouveau Testament"]["Autres Epîtres"] = extract_books("Autres Epîtres")
+    bible_data["Nouveau Testament"]["Livre de la Révélation"] = extract_books("Livre de la Révélation")
 
     return jsonify(bible_data)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-        
