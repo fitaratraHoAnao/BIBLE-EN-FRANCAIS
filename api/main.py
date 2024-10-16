@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Utiliser la clé API fournie directement dans les requêtes
-API_KEY = 'API_CLOUD_VISION'
+API_KEY = os.getenv('API_CLOUD_VISION')
 
 app = Flask(__name__)
 
@@ -114,3 +114,4 @@ def image_properties():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+    
