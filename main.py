@@ -42,10 +42,6 @@ def lire_la_bible():
             book_list = section.find_next('ul', class_='list-group')
             if book_list:
                 books = [li.get_text(strip=True) for li in book_list.find_all('li')]
-            else:
-                print(f"Aucune liste de livres trouvée pour {section_title}")
-        else:
-            print(f"Section non trouvée : {section_title}")
         return books
 
     # Scraper chaque partie de l'Ancien Testament
@@ -108,11 +104,11 @@ def recherche_bible():
     # Retourner les résultats sous forme de JSON
     return jsonify(result)
 
-# Route pour chercher des versets spécifiques
+# Route pour chercher un verset ou une plage de versets
 @app.route('/verser', methods=['GET'])
 def chercher_verser():
     # Récupérer le paramètre 'question' dans l'URL
-    question = request.args.get('question', '').lower().strip()  # On enlève les espaces
+    question = request.args.get('question', '').lower().strip()
 
     if not question:
         return jsonify({"error": "Vous devez fournir une question."}), 400
@@ -124,14 +120,23 @@ def chercher_verser():
             return jsonify({"error": "Format incorrect. Utilisez 'livre chapitre-début_fin', par exemple 'genese 15-18'."}), 400
         
         livre = parts[0]
-        versets = parts[1].replace('%20', ' ')  # Gérer les espaces encodés
+        versets = parts[1]
 
+        # Gérer les cas avec tiret (chapitre et plage de versets)
         if '-' in versets:
-            chapitre, debut_fin = versets.split('-')
-            debut, fin = debut_fin.split('-')  # Extraction correcte des deux parties du verset
+            parts = versets.split('-')
+            if len(parts) == 2:  # Si seulement un tiret, chapitre-début_fin
+                chapitre = parts[0]
+                debut, fin = parts[1], parts[1]  # Même verset pour début et fin si pas de plage
+            elif len(parts) == 3:  # Si deux tirets, chapitre-début-fin
+                chapitre = parts[0]
+                debut, fin = parts[1], parts[2]
+            else:
+                return jsonify({"error": "Format incorrect. Utilisez 'livre chapitre-début_fin', par exemple 'genese 15-18'."}), 400
         else:
             chapitre = versets
-            debut, fin = '1', '1'  # Si aucun tiret, on prend juste le verset 1 pour la sécurité
+            debut, fin = '1', '1'
+
     except (IndexError, ValueError):
         return jsonify({"error": "Format incorrect. Utilisez 'livre chapitre-début_fin', par exemple 'genese 15-18'."}), 400
 
@@ -169,6 +174,6 @@ def chercher_verser():
     # Retourner les résultats sous forme de JSON
     return jsonify(resultat)
 
-
+# Lancer l'application Flask
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
