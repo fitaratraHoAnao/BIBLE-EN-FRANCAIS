@@ -99,7 +99,17 @@ def recherche_bible():
         versets.append(f"{num} {contenu}")
 
     # Créer le dictionnaire de résultat
-   @app.route('/verser', methods=['GET'])
+    result = {
+        "livre": titre_livre,
+        "chapitre": titre_chapitre,
+        "versets": versets
+    }
+
+    # Retourner les résultats sous forme de JSON
+    return jsonify(result)
+
+# Route pour chercher des versets spécifiques
+@app.route('/verser', methods=['GET'])
 def chercher_verser():
     # Récupérer le paramètre 'question' dans l'URL
     question = request.args.get('question', '').lower().strip()  # On enlève les espaces
@@ -158,18 +168,7 @@ def chercher_verser():
 
     # Retourner les résultats sous forme de JSON
     return jsonify(resultat)
- result = {
-        "livre": titre_livre,
-        "chapitre": titre_chapitre,
-        "versets": versets
-    }
-
-    # Retourner les résultats sous forme de JSON
-    return jsonify(result)
-
-
 
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-    
