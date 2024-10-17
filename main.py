@@ -108,7 +108,6 @@ def recherche_bible():
     # Retourner les résultats sous forme de JSON
     return jsonify(result)
 
-# Nouvelle route pour rechercher un verset spécifique
 @app.route('/verser', methods=['GET'])
 def chercher_verser():
     # Récupérer le paramètre 'question' dans l'URL
@@ -122,7 +121,12 @@ def chercher_verser():
         parts = question.split()
         livre = parts[0]
         versets = parts[1]
-        chapitre, debut_fin = versets.split('-')
+        if '-' in versets:
+            chapitre, debut_fin = versets.split('-')
+            debut, fin = debut_fin.split('-')  # Extraction correcte des deux parties du verset
+        else:
+            chapitre = versets
+            debut, fin = '1', '1'  # Si aucun tiret, on prend juste le verset 1 pour la sécurité
     except (IndexError, ValueError):
         return jsonify({"error": "Format incorrect. Utilisez 'livre chapitre-début_fin', par exemple 'genese 15-18'."}), 400
 
@@ -144,7 +148,7 @@ def chercher_verser():
     for verse in soup.find_all('span', class_='verse'):
         num = verse.find('a', class_='num').text.strip()
         contenu = verse.find('span', class_='content').text.strip()
-        if int(debut_fin.split('-')[0]) <= int(num) <= int(debut_fin.split('-')[1]):
+        if int(debut) <= int(num) <= int(fin):
             versets_extraits.append(f"{num} {contenu}")
 
     # Si aucun verset n'est trouvé
@@ -159,6 +163,7 @@ def chercher_verser():
 
     # Retourner les résultats sous forme de JSON
     return jsonify(resultat)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
