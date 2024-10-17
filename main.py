@@ -99,28 +99,23 @@ def recherche_bible():
         versets.append(f"{num} {contenu}")
 
     # Créer le dictionnaire de résultat
-    result = {
-        "livre": titre_livre,
-        "chapitre": titre_chapitre,
-        "versets": versets
-    }
-
-    # Retourner les résultats sous forme de JSON
-    return jsonify(result)
-
-@app.route('/verser', methods=['GET'])
+   @app.route('/verser', methods=['GET'])
 def chercher_verser():
     # Récupérer le paramètre 'question' dans l'URL
-    question = request.args.get('question', '').lower()
-    
+    question = request.args.get('question', '').lower().strip()  # On enlève les espaces
+
     if not question:
         return jsonify({"error": "Vous devez fournir une question."}), 400
 
     # Séparer le livre et les versets dans la question (par exemple 'genese 15-18')
     try:
         parts = question.split()
+        if len(parts) < 2:
+            return jsonify({"error": "Format incorrect. Utilisez 'livre chapitre-début_fin', par exemple 'genese 15-18'."}), 400
+        
         livre = parts[0]
-        versets = parts[1]
+        versets = parts[1].replace('%20', ' ')  # Gérer les espaces encodés
+
         if '-' in versets:
             chapitre, debut_fin = versets.split('-')
             debut, fin = debut_fin.split('-')  # Extraction correcte des deux parties du verset
@@ -163,6 +158,16 @@ def chercher_verser():
 
     # Retourner les résultats sous forme de JSON
     return jsonify(resultat)
+ result = {
+        "livre": titre_livre,
+        "chapitre": titre_chapitre,
+        "versets": versets
+    }
+
+    # Retourner les résultats sous forme de JSON
+    return jsonify(result)
+
+
 
 
 if __name__ == '__main__':
